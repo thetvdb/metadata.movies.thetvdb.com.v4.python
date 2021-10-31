@@ -5,7 +5,7 @@ import xbmcgui
 import xbmcplugin
 
 from . import tvdb
-from .utils import logger
+from .utils import logger, get_language
 
 
 PREFIX = "https://artworks.thetvdb.com"
@@ -20,7 +20,7 @@ class ArtworkType(enum.IntEnum):
 def search_movie(title, settings, handle, year=None) -> None:
     # add the found shows to the list
 
-    tvdb_client = tvdb.client(settings)
+    tvdb_client = tvdb.Client(settings)
     kwargs = {'limit': 10}
     if year is not None:
         kwargs['year'] = year
@@ -45,7 +45,7 @@ def search_movie(title, settings, handle, year=None) -> None:
 
 def get_movie_details(id, settings, handle):
     # get the details of the found series
-    tvdb_client = tvdb.client(settings)
+    tvdb_client = tvdb.Client(settings)
 
     movie = tvdb_client.get_movie_details_api(id, settings)
     if not movie:
@@ -172,7 +172,7 @@ def add_artworks(movie, liz, set_poster=None):
 
 
 def get_artworks(id, settings, handle):
-    tvdb_client = tvdb.client(settings)
+    tvdb_client = tvdb.Client(settings)
     movie = tvdb_client.get_series_details_api(id, settings)
     if not movie:
         xbmcplugin.setResolvedUrl(

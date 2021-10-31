@@ -31,3 +31,11 @@ class logger:
 
 def create_uuid():
     return str(uuid.uuid4())
+
+
+def get_language(path_settings):
+    language = path_settings.get('language')
+    if language is None:
+        language = ADDON.getSetting('language') or 'eng'
+    return language
+
