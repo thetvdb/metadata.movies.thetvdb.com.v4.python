@@ -1,8 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-
+import enum
 import re
-import sys
 
 import xbmcgui
 import xbmcplugin
@@ -11,33 +8,39 @@ from . import tvdb
 from .utils import logger
 
 
+PREFIX = "https://artworks.thetvdb.com"
+
+
+class ArtworkType(enum.IntEnum):
+    POSTER = 14
+    BACKGROUND = 15
+
+
+
 def search_movie(title, settings, handle, year=None) -> None:
     # add the found shows to the list
 
     tvdb_client = tvdb.client(settings)
-    search_results = None
-    if year is None:
-        search_results = tvdb_client.search(title, type="movie")
-    else:
-        search_results = tvdb_client.search(title, year=year, type="movie")
-
-    if search_results is None:
+    kwargs = {'limit': 10}
+    if year is not None:
+        kwargs['year'] = year
+    search_results = tvdb_client.search(title, type="movie", **kwargs)
+    if not search_results:
         return
     items = []
     for movie in search_results:
-        nameAndYear = f"{movie['name']}" if not movie[
-            'year'] else f"{movie['name']} ({movie['year']})"
-
-        liz = xbmcgui.ListItem(nameAndYear, offscreen=True)
+        name = movie['name']
+        if movie.get('year'):
+            name += name + f' ({movie["year"]})'
+        liz = xbmcgui.ListItem(name, offscreen=True)
         url = str(movie['tvdb_id'])
         is_folder = True
         items.append((url, liz, is_folder))
     xbmcplugin.addDirectoryItems(
-    handle,
-    items,
-    len(items)
+        handle,
+        items,
+        len(items)
     )
-
 
 
 def get_movie_details(id, settings, handle):
@@ -54,13 +57,13 @@ def get_movie_details(id, settings, handle):
     liz.setCast(people["cast"])
     genres = get_genres(movie)
     details = {
-                    'title': movie["name"],
-                    'plot': movie["overview"],
-                    'plotoutline': movie["overview"],
-                    'mediatype': 'movie',
-                    'writer': people["writers"],
-                    'director': people["directors"],
-                    'genre': genres,
+        'title': movie["name"],
+        'plot': movie["overview"],
+        'plotoutline': movie["overview"],
+        'mediatype': 'movie',
+        'writer': people["writers"],
+        'director': people["directors"],
+        'genre': genres,
     }
     years = get_year(movie)
     if years:
@@ -83,7 +86,7 @@ def get_movie_details(id, settings, handle):
         details["tag"] = tags
     
     trailer = get_trailer(movie)
-    if trailer is not None and trailer != "":
+    if trailer:
         details["trailer"] = trailer
 
     _set = get_set(movie)
@@ -125,13 +128,12 @@ def get_cast(movie):
         "cast": cast,
     }
 
-ARTWORK_TYPE_POSTER = 14
-ARTWORK_TYPE_BACKGROUND = 15
+
 def get_artworks_from_movie(movie:dict):
     artworks = movie.get("artworks", [{}])
 
-    posters = sorted([art for art in artworks if art.get("type", 0) == ARTWORK_TYPE_POSTER], key=lambda image: image.get("score", 0),reverse=True)
-    backgrounds = sorted([art for art in artworks if art.get("type", 0) == ARTWORK_TYPE_BACKGROUND], key=lambda image: image.get("score", 0),reverse=True)
+    posters = sorted([art for art in artworks if art.get("type", 0) == ArtworkType.POSTER], key=lambda image: image.get("score", 0),reverse=True)
+    backgrounds = sorted([art for art in artworks if art.get("type", 0) == ArtworkType.BACKGROUND], key=lambda image: image.get("score", 0),reverse=True)
     artwork_dict = {
         "posters": posters[0:10],
         "fanarts": backgrounds[0:10],
@@ -139,8 +141,7 @@ def get_artworks_from_movie(movie:dict):
     return artwork_dict
 
 
-PREFIX = "https://artworks.thetvdb.com"
-def add_artworks(movie, liz, set_poster):
+def add_artworks(movie, liz, set_poster=None):
     
     artworks = get_artworks_from_movie(movie)
     posters = artworks.get("posters", [])
@@ -169,6 +170,7 @@ def add_artworks(movie, liz, set_poster):
     if fanarts:
         liz.setAvailableFanart(fanart_items)
 
+
 def get_artworks(id, settings, handle):
     tvdb_client = tvdb.client(settings)
     movie = tvdb_client.get_series_details_api(id, settings)
@@ -179,6 +181,7 @@ def get_artworks(id, settings, handle):
     liz = xbmcgui.ListItem(id, offscreen=True)
     add_artworks(movie, liz)
     xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=liz)
+
 
 def get_year(movie):
     country = movie.get("originalCountry", "")
@@ -203,8 +206,10 @@ def get_year(movie):
         "premiered": release_str,
     }
 
+
 def get_genres(movie):
     return [genre["name"] for genre in movie.get("genres", [])]
+
 
 def get_rating(movie):
     ratings = movie.get("contentRatings", None)
@@ -218,12 +223,14 @@ def get_rating(movie):
     
     return rating
 
+
 def get_studio(movie):
     studios = movie.get("studios", [])
     if not studios or len(studios) == 0:
         return None
     name = studios[0]["name"]
     return name
+
 
 def get_tags(movie):
     tags = []
@@ -232,6 +239,7 @@ def get_tags(movie):
         for tag in tag_options:
             tags.append(tag["name"])
     return tags
+
 
 def get_set(movie):
     lists = movie.get("lists", None)
@@ -258,6 +266,7 @@ def get_set(movie):
         }
  
     return None
+
 
 def get_trailer(movie):
     trailer_url = ""
