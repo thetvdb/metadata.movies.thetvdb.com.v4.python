@@ -1,30 +1,40 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-
-import json
+import enum
 import urllib.parse
-import urllib.request
-from urllib.request import urlopen
 
-from .utils import logger
+from resources.lib import simple_requests as requests
+from resources.lib.utils import logger
 
-apikey = "1fb0f305-6011-4edd-a827-07440421fed9"
-apikey_with_pin = "41080b3a-7506-478e-b616-2775663788b6" 
+apikey = "#*apikey*#"
+apikey_with_pin = "#*apikey_with_pin*#"
+
+USER_AGENT = 'TheTVDB v.4 TV Scraper for Kodi'
+
+
+class ArtworkType(enum.IntEnum):
+    BANNER = 1
+    POSTER = 2
+    FANART = 3
+
+
 class Auth:
+    logger.debug("logging in")
+
     def __init__(self, url, apikey, pin="", **kwargs):
         loginInfo = {"apikey": apikey}
-        if pin != "":
+        if pin:
             loginInfo["pin"] = pin
             loginInfo["apikey"] = apikey_with_pin
-
-        for key, value in kwargs.items():
-            loginInfo[key] = value
-        loginInfoBytes = json.dumps(loginInfo, indent=2).encode('utf-8')
-        req = urllib.request.Request(url, data=loginInfoBytes)
-        req.add_header("Content-Type", "application/json")
-        with urllib.request.urlopen(req, data=loginInfoBytes) as response:
-            res = json.load(response)
-            self.token = res["data"]["token"]
+        loginInfo.update(kwargs)
+        logger.debug("body in auth call")
+        logger.debug(loginInfo)
+        headers = {
+            'User-Agent': USER_AGENT,
+            'Accept': 'application/json',
+        }
+        response = requests.post(url, headers=headers, json=loginInfo)
+        if not response.ok:
+            response.raise_for_status()
+        self.token = response.json()['data']['token']
 
     def get_token(self):
         return self.token
@@ -35,17 +45,35 @@ class Request:
         self.auth_token = auth_token
         self.cache = {}
 
-    def make_request(self, url):
+    def make_api_request(self, url):
+        logger.debug(f"about to make request to url {url}")
+        logger.debug(url)
         data = self.cache.get(url, None)
         if data:
             return data
-        req = urllib.request.Request(url)
-        req.add_header("Authorization", "Bearer {}".format(self.auth_token))
-        with urllib.request.urlopen(req) as response:
-            res = json.load(response)
-            data = res["data"]
-            self.cache[url] = data
-            return data
+        headers = {
+            'User-Agent': USER_AGENT,
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {self.auth_token}'
+        }
+        response = requests.get(url, headers=headers)
+        if not response.ok:
+            response.raise_for_status()
+        data = response.json()['data']
+        self.cache[url] = data
+        return data
+
+    @staticmethod
+    def make_web_request(url):
+        logger.debug(f"about to make request to url {url}")
+        headers = {
+            'User-Agent': USER_AGENT,
+            'Accept': 'text/html',
+        }
+        response = requests.get(url, headers=headers)
+        if not response.ok:
+            response.raise_for_status()
+        return response.text
 
 
 class Url:
@@ -55,8 +83,62 @@ class Url:
     def login_url(self):
         return "{}/login".format(self.base_url)
 
+    def artwork_status_url(self):
+        return "{}/artwork/statuses".format(self.base_url)
+
+    def artwork_types_url(self):
+        return "{}/artwork/types".format(self.base_url)
+
     def artwork_url(self, id, extended=False):
         url = "{}/artwork/{}".format(self.base_url, id)
+        if extended:
+            url = "{}/extended".format(url)
+        return url
+
+    def awards_url(self, page):
+        if page < 0:
+            page = 0
+        url = "{}/awards?page={}".format(self.base_url, page)
+        return url
+
+    def award_url(self, id, extended=False):
+        url = "{}/awards/{}".format(self.base_url, id)
+        if extended:
+            url = "{}/extended".format(url)
+        return url
+
+    def awards_categories_url(self):
+        url = "{}/awards/categories".format(self.base_url)
+        return url
+
+    def award_category_url(self, id, extended=False):
+        url = "{}/awards/categories/{}".format(self.base_url, id)
+        if extended:
+            url = "{}/extended".format(url)
+        return url
+
+    def content_ratings_url(self):
+        url = "{}/content/ratings".format(self.base_url)
+        return url
+
+    def countries_url(self):
+        url = "{}/countries".format(self.base_url)
+        return url
+
+    def companies_url(self, page=0):
+        url = "{}/companies?page={}".format(self.base_url, page)
+        return url
+
+    def company_url(self, id):
+        url = "{}/companies/{}".format(self.base_url, id)
+        return url
+
+    def all_series_url(self, page=0):
+        url = "{}/series".format(self.base_url)
+        return url
+
+    def series_url(self, id, extended=False):
+        url = "{}/series/{}".format(self.base_url, id)
         if extended:
             url = "{}/extended".format(url)
         return url
@@ -71,18 +153,50 @@ class Url:
             url = "{}/extended".format(url)
         return url
 
-    def list_url(self, id, extended=False):
-        url = "{}/lists/{}".format(self.base_url, id)
+    def season_url(self, id, extended=False):
+        url = "{}/seasons/{}".format(self.base_url, id)
         if extended:
             url = "{}/extended".format(url)
         return url
 
-    def movie_translation_url(self, id, language="eng"):
-        url = f'{self.base_url}/movies/{id}/translations/{language}'
+    def episode_url(self, id, extended=False):
+        url = "{}/episodes/{}".format(self.base_url, id)
+        if extended:
+            url = "{}/extended".format(url)
         return url
 
-    def list_translation_url(self, id, language="eng"):
-        url = f'{self.base_url}/lists/{id}/translations/{language}'
+    def episode_translation_url(self, id:int, language:str="eng"):
+        url = "{}/episodes/{}/translations/{}".format(self.base_url, id, language)
+        return url
+
+    def person_url(self, id, extended=False):
+        url = "{}/people/{}".format(self.base_url, id)
+        if extended:
+            url = "{}/extended".format(url)
+        return url
+
+    def character_url(self, id):
+        url = "{}/characters/{}".format(self.base_url, id)
+        return url
+
+    def people_types_url(self, id):
+        url = "{}/people/types".format(self.base_url)
+        return url
+
+    def source_types_url(self):
+        url = "{}/sources/types".format(self.base_url)
+        return url
+
+    def updates_url(self, since=0):
+        url = "{}/updates?since={}".format(self.base_url, since)
+        return url
+
+    def tag_options_url(self):
+        url = "{}/tags/options".format(self.base_url)
+        return url
+
+    def tag_option_url(self, id):
+        url = "{}/tags/options/{}".format(self.base_url, id)
         return url
 
     def search_url(self, query, filters):
@@ -91,105 +205,321 @@ class Url:
         url = "{}/search?{}".format(self.base_url, qs)
         return url
 
+    def series_translation_url(self, id: int, language="eng"):
+        url = "{}/series/{}/translations/{}".format(
+            self.base_url, id, language)
+        return url
+
+    def series_season_episodes_url(self, id: int, season_type_number: int = 1, page: int = 0):
+        season_type = "default"
+        if season_type_number == 2:
+            season_type = "absolute"
+        if season_type_number == 3:
+            season_type = "dvd"
+        url = "{}/series/{}/episodes/{}?page={}".format(
+            self.base_url, id, season_type, page)
+        return url
+
+
 class TVDB:
     def __init__(self, apikey: str, pin="", **kwargs):
         self.url = Url()
         login_url = self.url.login_url()
-        self.auth = Auth(login_url, apikey, pin)
+        self.auth = Auth(login_url, apikey, pin, **kwargs)
         auth_token = self.auth.get_token()
         self.request = Request(auth_token)
+
+    def get_artwork_statuses(self) -> list:
+        """Returns a list of artwork statuses"""
+        url = self.url.artwork_status_url()
+        return self.request.make_api_request(url)
+
+    def get_artwork_types(self) -> list:
+        """Returns a list of artwork types"""
+        url = self.url.artwork_types_url()
+        return self.request.make_api_request(url)
 
     def get_artwork(self, id: int) -> dict:
         """Returns an artwork dictionary"""
         url = self.url.artwork_url(id)
-        return self.request.make_request(url)
+        return self.request.make_api_request(url)
 
     def get_artwork_extended(self, id: int) -> dict:
         """Returns an artwork extended dictionary"""
         url = self.url.artwork_url(id, True)
-        return self.request.make_request(url)
+        return self.request.make_api_request(url)
+
+    def get_all_awards(self, page=0) -> list:
+        """Returns a list of awards"""
+        url = self.url.awards_url(page)
+        return self.request.make_api_request(url)
+
+    def get_award(self, id: int) -> dict:
+        """Returns an award dictionary"""
+        url = self.url.award_url(id, False)
+        return self.request.make_api_request(url)
+
+    def get_award_extended(self, id: int) -> dict:
+        """Returns an award extended dictionary"""
+        url = self.url.award_url(id, True)
+        return self.request.make_api_request(url)
+
+    def get_all_award_categories(self) -> list:
+        """Returns a list of award categories"""
+        url = self.url.awards_categories_url()
+        return self.request.make_api_request(url)
+
+    def get_award_category(self, id: int) -> dict:
+        """Returns an artwork category dictionary"""
+        url = self.url.award_category_url(id, False)
+        return self.request.make_api_request(url)
+
+    def get_award_category_extended(self, id: int) -> dict:
+        """Returns an award category extended dictionary"""
+        url = self.url.award_category_url(id, True)
+        return self.request.make_api_request(url)
+
+    def get_content_ratings(self) -> list:
+        """Returns a list of content ratings"""
+        url = self.url.content_ratings_url()
+        return self.request.make_api_request(url)
+
+    def get_countries(self) -> list:
+        """Returns a list of countries"""
+        url = self.url.countries_url()
+        return self.request.make_api_request(url)
+
+    def get_all_companies(self, page=0) -> list:
+        """Returns a list of companies"""
+        url = self.url.companies_url(page)
+        return self.request.make_api_request(url)
+
+    def get_company(self, id: int) -> dict:
+        """Returns a company dictionary"""
+        url = self.url.company_url(id)
+        return self.request.make_api_request(url)
+
+    def get_all_series(self, page=0) -> list:
+        """Returns a list of series"""
+        url = self.url.all_series_url(page)
+        return self.request.make_api_request(url)
+
+    def get_series(self, id: int) -> dict:
+        """Returns a series dictionary"""
+        url = self.url.series_url(id, False)
+        return self.request.make_api_request(url)
+
+    def get_series_extended(self, id: int) -> dict:
+        """Returns an series extended dictionary"""
+        url = self.url.series_url(id, True)
+        return self.request.make_api_request(url)
+
+    def get_series_translation(self, id: int, lang: str) -> dict:
+        """Returns a series translation dictionary"""
+        url = self.url.series_translation_url(id, lang)
+        return self.request.make_api_request(url)
 
     def get_all_movies(self, page=0) -> list:
         """Returns a list of movies"""
         url = self.url.movies_url(page)
-        return self.request.make_request(url)
+        return self.request.make_api_request(url)
 
     def get_movie(self, id: int) -> dict:
         """Returns a movie dictionary"""
         url = self.url.movie_url(id, False)
-        return self.request.make_request(url)
+        return self.request.make_api_request(url)
 
     def get_movie_extended(self, id: int) -> dict:
         """Returns a movie extended dictionary"""
         url = self.url.movie_url(id, True)
-        return self.request.make_request(url)
+        return self.request.make_api_request(url)
 
-    def get_movie_translation(self, id, lang: str) -> dict:
+    def get_movie_translation(self, lang: str) -> dict:
         """Returns a movie translation dictionary"""
         url = self.url.movie_translation_url(id, lang)
-        return self.request.make_request(url)
+        return self.request.make_api_request(url)
 
-    def get_list_extended(self, id: int) -> dict:
-        """Returns a movie translation dictionary"""
-        url = self.url.list_url(id, True)
-        return self.request.make_request(url)
+    def get_season(self, id: int) -> dict:
+        """Returns a season dictionary"""
+        url = self.url.season_url(id, False)
+        return self.request.make_api_request(url)
 
-    def get_list_translation(self, id: int, lang: str) -> dict:
-        """Returns a movie translation dictionary"""
-        url = self.url.list_translation_url(id, lang)
-        return self.request.make_request(url)
+    def get_season_extended(self, id: int) -> dict:
+        """Returns a season extended dictionary"""
+        url = self.url.season_url(id, True)
+        return self.request.make_api_request(url)
+
+    def get_episode(self, id: int) -> dict:
+        """Returns an episode dictionary"""
+        url = self.url.episode_url(id, False)
+        return self.request.make_api_request(url)
+
+    def get_episode_translation(self, id: int, lang: str) -> dict:
+        """Returns an episode translation dictionary"""
+        url = self.url.episode_translation_url(id, lang)
+        return self.request.make_api_request(url)
+
+    def get_episode_extended(self, id: int) -> dict:
+        """Returns an episode extended dictionary"""
+        url = self.url.episode_url(id, True)
+        return self.request.make_api_request(url)
+
+    def get_person(self, id: int) -> dict:
+        """Returns a person dictionary"""
+        url = self.url.person_url(id, False)
+        return self.request.make_api_request(url)
+
+    def get_person_extended(self, id: int) -> dict:
+        """Returns a person extended dictionary"""
+        url = self.url.person_url(id, True)
+        return self.request.make_api_request(url)
+
+    def get_character(self, id: int) -> dict:
+        """Returns a character dictionary"""
+        url = self.url.character_url(id)
+        return self.request.make_api_request(url)
+
+    def get_all_people_types(self) -> list:
+        """Returns a list of people types"""
+        url = self.url.people_types_url()
+        return self.request.make_api_request(url)
+
+    def get_all_sourcetypes(self) -> list:
+        """Returns a list of sourcetypes"""
+        url = self.url.source_types_url()
+        return self.request.make_api_request(url)
+
+    def get_updates(self, since: int) -> list:
+        """Returns a list of updates"""
+        url = self.url.updates_url(since)
+        return self.request.make_api_request(url)
+
+    def get_all_tag_options(self, page=0) -> list:
+        """Returns a list of tag options"""
+        url = self.url.tag_options_url()
+        return self.request.make_api_request(url)
+
+    def get_tag_option(self, id: int) -> dict:
+        """Returns a tag option dictionary"""
+        url = self.url.tag_option_url(id)
+        return self.request.make_api_request(url)
 
     def search(self, query, **kwargs) -> list:
         """Returns a list of search results"""
         url = self.url.search_url(query, kwargs)
-        return self.request.make_request(url)
+        return self.request.make_api_request(url)
 
-    def get_movie_details_api(self, id, settings={}, language="eng") -> dict:
-        movie = self.get_movie_extended(id)
-        translations = self.get_movie_translation(id, language)
-        overview = translations.get("overview", "")
-        movie["overview"] = overview
-        name = translations.get("name", "")
-        movie["name"] = name  
-        return movie 
-
-    def get_movie_set_info(self, id, settings):
-        list = self.get_list_extended(id)
-        lang = settings.get("language", "eng")
-        name = None
-        overview = None
-        try:
-            trans = self.get_list_translation(id, lang)
-            name = trans.get("name", "")
-            overview = trans.get("overview", "")
-        except:
-            name = list.get("name", "")
-        movie_id = None
-        entities = list.get("entities", [])
-        if not entities:
-            return None
-        for item in entities:
-            if item["movieId"] is not None:
-                movie_id = item["movieId"]
+    def get_series_season_episodes(self, id: int, season_type: int = 1):
+        page = 0
+        episodes = []
+        while True:
+            url = self.url.series_season_episodes_url(id, season_type, page)
+            res = self.request.make_api_request(url).get("episodes", [])
+            page += 1
+            if not res:
                 break
-        return {
-            "movie_id": movie_id,
-            "name": name,
-            "overview": overview,
-            }
-            
-            
+            episodes.extend(res)
+        return episodes
+
+    def get_series_details_api(self, id, settings=None) -> dict:
+        settings = settings or {}
+        series = self.get_series_extended(id)
+        lang = get_language(settings)
+        try:
+            translation = self.get_series_translation(id, lang)
+        except requests.HTTPError:
+            translation = self.get_series_translation(id, "eng")
+        overview = translation.get("overview") or ''
+        name = translation.get("name") or ''
+        if not (overview and name) and translation.get('language') != 'eng':
+            english_info = self.get_series_translation(id, 'eng')
+            if not overview:
+                overview = english_info.get('overview') or ''
+            if not name:
+                name = english_info.get('name') or ''
+        series["overview"] = overview
+        series["name"] = name
+        return series
+
+    def get_series_episodes_api(self, id, settings):
+        season_type = get_season_type(settings)
+        return self.get_series_season_episodes(id, season_type)
+
+    def get_episode_details_api(self, id, settings):
+        ep = self.get_episode_extended(id)
+        lang = get_language(settings)
+        try:
+            trans = self.get_episode_translation(id, lang)
+        except requests.HTTPError:
+            trans = self.get_episode_translation(id, "eng")
+        overview = trans.get("overview") or ''
+        name = trans.get("name") or ''
+        if not (overview and name) and trans['language'] != 'eng':
+            english_info = self.get_episode_translation(id, 'eng')
+            if not overview:
+                overview = english_info.get('overview') or ''
+            if not name:
+                name = english_info.get('name') or ''
+        ep["overview"] = overview
+        ep["name"] = name
+        return ep
+
+
+def get_language(settings):
+    return settings.get("language", "eng")
+
+
+def get_season_type(settings):
+    season_type_str = settings.get("season_type", "1")
+    return int(season_type_str)
+
 
 class client(object):
     _instance = None
 
-    def __new__(cls, settings={}):
+    def __new__(cls, settings=None):
+        settings = settings or {}
         if cls._instance is None:
             pin = settings.get("pin", "")
             gender = settings.get("gender", "Other")
             uuid = settings.get("uuid", "")
             birth_year = settings.get("year", "")
-            cls._instance = TVDB(apikey, pin=pin,gender=gender, birthYear=birth_year, uuid=uuid)
+            cls._instance = TVDB(apikey, pin=pin, gender=gender, birthYear=birth_year, uuid=uuid)
         return cls._instance
 
 
+def get_artworks_from_show(show: dict, language: str = 'eng'):
+
+    def filter_by_language(item):
+        item_language = item.get('language')
+        return item_language in (language, 'eng') or item_language is None
+
+    def sorter(item):
+        item_language = item.get('language')
+        score = item.get('score', 0)
+        return item_language == language, score
+
+    artworks = show.get("artworks", [{}])
+    artworks = filter(filter_by_language, artworks)
+    banners = []
+    posters = []
+    fanarts = []
+    for art in artworks:
+        art_type = art.get('type')
+        if art_type == ArtworkType.BANNER:
+            banners.append(art)
+        elif art_type == ArtworkType.POSTER:
+            posters.append(art)
+        elif art_type == ArtworkType.FANART:
+            fanarts.append(art)
+    banners.sort(key=sorter, reverse=True)
+    posters.sort(key=sorter, reverse=True)
+    fanarts.sort(key=sorter, reverse=True)
+    season_posters = [(season.get("image", ""), season.get("number", 0)) for season in show.get("seasons", [])]
+    artwork_dict = {
+        "banners": banners,
+        "posters": posters,
+        "fanarts":fanarts,
+        "season_posters": season_posters,
+    }
+    return artwork_dict
