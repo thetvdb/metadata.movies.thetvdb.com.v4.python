@@ -1,19 +1,12 @@
-import enum
 import urllib.parse
 
-from resources.lib import simple_requests as requests
-from resources.lib.utils import logger
+from . import simple_requests as requests
+from .utils import logger
 
 apikey = "#*apikey*#"
 apikey_with_pin = "#*apikey_with_pin*#"
 
-USER_AGENT = 'TheTVDB v.4 Movie Scraper for Kodi'
-
-
-class ArtworkType(enum.IntEnum):
-    BANNER = 1
-    POSTER = 2
-    FANART = 3
+USER_AGENT = 'TheTVDB v.4 Movies Scraper for Kodi'
 
 
 class Auth:
