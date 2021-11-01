@@ -36,7 +36,7 @@ def search_movie(title, settings, handle, year=None) -> None:
     for movie in search_results:
         name = movie['name']
         if movie.get('year'):
-            name += name + f' ({movie["year"]})'
+            name += f' ({movie["year"]})'
         liz = xbmcgui.ListItem(name, offscreen=True)
         url = str(movie['tvdb_id'])
         is_folder = True
