@@ -8,7 +8,7 @@ from . import tvdb
 from .utils import logger, get_language
 
 
-PREFIX = "https://artworks.thetvdb.com"
+ARTWORK_URL_PREFIX = "https://artworks.thetvdb.com"
 
 
 class ArtworkType(enum.IntEnum):
@@ -98,7 +98,7 @@ def get_movie_details(id, settings, handle):
         first_movie_in_set_id = set_info["movie_id"]
         if first_movie_in_set_id:
             first_movie_in_set = tvdb_client.get_movie_details_api(first_movie_in_set_id, settings)
-            set_poster =  first_movie_in_set["image"]
+            set_poster = first_movie_in_set["image"]
         
     liz.setInfo('video', details)
 
@@ -114,9 +114,12 @@ def get_cast(movie):
     writers = []
     for char in movie["characters"]:
         if char["peopleType"] == "Actor":
-            d = {}
-            d["name"] = char["personName"]
-            d["role"] = char["name"]
+            d = {
+                'name': char["personName"],
+                'role': char["name"],
+            }
+            if char.get('image'):
+                d['thumbnail'] = ARTWORK_URL_PREFIX + char['image']
             cast.append(d)
         if char["peopleType"] == "Director":
             directors.append(char["personName"])
@@ -129,7 +132,7 @@ def get_cast(movie):
     }
 
 
-def get_artworks_from_movie(movie:dict):
+def get_artworks_from_movie(movie: dict):
     artworks = movie.get("artworks", [{}])
 
     posters = sorted([art for art in artworks if art.get("type", 0) == ArtworkType.POSTER], key=lambda image: image.get("score", 0),reverse=True)
@@ -154,17 +157,17 @@ def add_artworks(movie, liz, set_poster=None):
 
     for poster in posters:
         image = poster.get("image", "")
-        if PREFIX not in image: 
-            image = PREFIX + image
+        if ARTWORK_URL_PREFIX not in image:
+            image = ARTWORK_URL_PREFIX + image
         liz.addAvailableArtwork(image, 'poster')
 
     fanart_items = []
     for fanart in fanarts:
         image = fanart.get("image", "")
         thumb  = fanart["thumbnail"]
-        if PREFIX not in image: 
-            image = PREFIX + image
-            thumb = PREFIX + thumb
+        if ARTWORK_URL_PREFIX not in image:
+            image = ARTWORK_URL_PREFIX + image
+            thumb = ARTWORK_URL_PREFIX + thumb
         fanart_items.append(
             {'image': image, 'preview': thumb})
     if fanarts:
