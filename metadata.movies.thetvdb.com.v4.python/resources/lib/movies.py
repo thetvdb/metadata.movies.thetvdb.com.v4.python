@@ -10,6 +10,11 @@ from .utils import logger, get_language
 
 ARTWORK_URL_PREFIX = "https://artworks.thetvdb.com"
 
+SUPPORTED_REMOTE_IDS = {
+    'IMDB': 'imdb',
+    'TheMovieDB.com': 'tmdb',
+}
+
 
 class ArtworkType(enum.IntEnum):
     POSTER = 14
@@ -102,7 +107,8 @@ def get_movie_details(id, settings, handle):
         
     liz.setInfo('video', details)
 
-    liz.setUniqueIDs({'tvdb': movie["id"]}, 'tvdb')
+    unique_ids = get_unique_ids(movie)
+    liz.setUniqueIDs(unique_ids, 'tvdb')
 
     add_artworks(movie, liz, set_poster)
     xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=liz)
@@ -295,3 +301,15 @@ def get_trailer(movie):
     trailer_id = trailer_id_match.group(0)
     url = f'plugin://plugin.video.youtube/play/?video_id={trailer_id}'
     return url
+
+
+def get_unique_ids(movie):
+    unique_ids = {'tvdb': movie['id']}
+    remote_ids = movie.get('remoteIds')
+    if remote_ids:
+        for remote_id_info in remote_ids:
+            source_name = remote_id_info.get('sourceName')
+            if source_name in SUPPORTED_REMOTE_IDS:
+                unique_ids[SUPPORTED_REMOTE_IDS[source_name]] = remote_id_info['id']
+    return unique_ids
+
