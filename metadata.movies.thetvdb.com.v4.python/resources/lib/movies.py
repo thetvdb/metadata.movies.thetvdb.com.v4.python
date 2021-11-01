@@ -125,7 +125,10 @@ def get_cast(movie):
                 'role': char["name"],
             }
             if char.get('image'):
-                d['thumbnail'] = ARTWORK_URL_PREFIX + char['image']
+                thumbnail = char['image']
+                if ARTWORK_URL_PREFIX not in thumbnail:
+                    thumbnail = ARTWORK_URL_PREFIX + thumbnail
+                d['thumbnail'] = thumbnail
             cast.append(d)
         if char["peopleType"] == "Director":
             directors.append(char["personName"])
