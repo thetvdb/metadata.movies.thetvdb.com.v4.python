@@ -199,6 +199,11 @@
 						<heading>30000</heading>
 					</control>
 				</setting>
+				<setting id="get_tags" type="boolean" label="30012" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="gender" type="string" label="30006" help="">
 					<level>0</level>
 					<default>Other</default>

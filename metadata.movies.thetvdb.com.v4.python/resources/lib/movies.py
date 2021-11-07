@@ -84,10 +84,11 @@ def get_movie_details(id, settings, handle):
     studio = get_studio(movie)
     if studio:
         details["studio"] = studio
-    
-    tags = get_tags(movie)
-    if tags:
-        details["tag"] = tags
+
+    if settings.get('get_tags'):
+        tags = get_tags(movie)
+        if tags:
+            details["tag"] = tags
     
     trailer = get_trailer(movie)
     if trailer:
