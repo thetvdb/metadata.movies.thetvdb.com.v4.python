@@ -3,8 +3,8 @@ import urllib.parse
 from . import simple_requests as requests
 from .utils import logger
 
-apikey = "#*apikey*#"
-apikey_with_pin = "#*apikey_with_pin*#"
+apikey = "%apikey%"
+apikey_with_pin = "%apikey_with_pin%"
 
 USER_AGENT = 'TheTVDB v.4 Movies Scraper for Kodi'
 
