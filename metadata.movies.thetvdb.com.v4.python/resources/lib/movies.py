@@ -21,7 +21,6 @@ class ArtworkType(enum.IntEnum):
     BACKGROUND = 15
 
 
-
 def search_movie(title, settings, handle, year=None) -> None:
     # add the found shows to the list
 
