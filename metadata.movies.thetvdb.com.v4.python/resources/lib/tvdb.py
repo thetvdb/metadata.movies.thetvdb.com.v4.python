@@ -159,7 +159,10 @@ class TVDB:
     def get_list_translation(self, id: int, lang: str) -> dict:
         """Returns a movie translation dictionary"""
         url = self.url.list_translation_url(id, lang)
-        return self.request.make_api_request(url)
+        result = self.request.make_api_request(url)
+        if result:
+            return result[0]
+        return None
 
     def search(self, query, **kwargs) -> list:
         """Returns a list of search results"""
@@ -176,18 +179,19 @@ class TVDB:
         return movie
 
     def get_movie_set_info(self, id, settings):
-        list = self.get_list_extended(id)
+        list_ = self.get_list_extended(id)
         lang = settings.get("language", "eng")
-        name = None
-        overview = None
+        name = list_.get("name", "")
+        overview = list_.get('overview', '')
         try:
             trans = self.get_list_translation(id, lang)
-            name = trans.get("name", "")
-            overview = trans.get("overview", "")
-        except:
-            name = list.get("name", "")
+            if trans:
+                name = trans.get("name") or name
+                overview = trans.get("overview") or overview
+        except requests.HTTPError:
+            pass
         movie_id = None
-        entities = list.get("entities", [])
+        entities = list_.get("entities", [])
         if not entities:
             return None
         for item in entities:

@@ -94,17 +94,16 @@ def get_movie_details(id, settings, handle):
     if trailer:
         details["trailer"] = trailer
 
-    _set = get_set(movie)
+    set_ = get_set(movie)
     set_poster = None
-    if _set:
-        set_info = tvdb_client.get_movie_set_info(_set["id"], settings)
+    if set_:
+        set_info = tvdb_client.get_movie_set_info(set_["id"], settings)
         details["set"] = set_info["name"]
-        details["set.overview"] = set_info["overview"]
+        details["setoverview"] = set_info["overview"]
         first_movie_in_set_id = set_info["movie_id"]
         if first_movie_in_set_id:
             first_movie_in_set = tvdb_client.get_movie_details_api(first_movie_in_set_id, settings)
             set_poster = first_movie_in_set["image"]
-        
     liz.setInfo('video', details)
 
     unique_ids = get_unique_ids(movie)
@@ -161,8 +160,6 @@ def add_artworks(movie, liz, set_poster=None):
 
     if set_poster:
         liz.addAvailableArtwork(set_poster, 'set.poster')
-
-
 
     for poster in posters:
         image = poster.get("image", "")
@@ -260,14 +257,13 @@ def get_set(movie):
     
     name = ""
     id = 0
-    score = float('inf')
+    score = -1.0
     logger.debug(lists)
     for l in lists:
-        if l["isOfficial"]:
-            if l["score"] < score:
-                score = l["score"]
-                name = l["name"]
-                id = l["id"]
+        if l["isOfficial"] and l["score"] > score:
+            score = l["score"]
+            name = l["name"]
+            id = l["id"]
     if name and id:
         logger.debug("name and id in get set")
         logger.debug(name)
