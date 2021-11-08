@@ -8,6 +8,7 @@ import xbmcaddon
 import xbmcplugin
 
 from .movies import get_artworks, get_movie_details, search_movie
+from .nfo import get_movie_id_from_nfo
 from .utils import create_uuid, logger
 
 ADDON_SETTINGS = xbmcaddon.Addon()
@@ -41,6 +42,7 @@ def run():
             get_movie_details(urllib.parse.unquote_plus(params["url"]), settings, handle)
         elif action == 'NfoUrl' and 'nfo' in params:
             logger.debug("should parse nfo")
+            get_movie_id_from_nfo(params['nfo'], handle)
         elif action == 'getartwork' and 'id' in params:
             logger.debug("about to call get artworks")
             get_artworks(urllib.parse.unquote_plus(
