@@ -38,4 +38,3 @@ def get_language(path_settings):
     if language is None:
         language = ADDON.getSetting('language') or 'eng'
     return language
-

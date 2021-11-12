@@ -51,7 +51,7 @@ def get_movie_details(id, settings, handle):
     # get the details of the found series
     tvdb_client = tvdb.Client(settings)
 
-    language = settings.get('language') or 'eng'
+    language = get_language(settings)
     movie = tvdb_client.get_movie_details_api(id, language=language)
     if not movie:
         xbmcplugin.setResolvedUrl(
@@ -103,14 +103,15 @@ def get_movie_details(id, settings, handle):
         details["setoverview"] = set_info["overview"]
         first_movie_in_set_id = set_info["movie_id"]
         if first_movie_in_set_id:
-            first_movie_in_set = tvdb_client.get_movie_details_api(first_movie_in_set_id, language=language)
+            first_movie_in_set = tvdb_client.get_movie_details_api(first_movie_in_set_id,
+                                                                   language=language)
             set_poster = first_movie_in_set["image"]
     liz.setInfo('video', details)
 
     unique_ids = get_unique_ids(movie)
     liz.setUniqueIDs(unique_ids, 'tvdb')
 
-    add_artworks(movie, liz, set_poster)
+    add_artworks(movie, liz, set_poster, language=language)
     xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=liz)
 
 
@@ -141,11 +142,28 @@ def get_cast(movie):
     }
 
 
-def get_artworks_from_movie(movie: dict, language='eng'):
-    artworks = movie.get("artworks", [{}])
+def get_artworks_from_movie(movie: dict, language='eng') -> dict:
+    def filter_by_language(item):
+        item_language = item.get('language')
+        return item_language in (language, 'eng') or item_language is None
 
-    posters = sorted([art for art in artworks if art.get("type", 0) == ArtworkType.POSTER], key=lambda image: image.get("score", 0),reverse=True)
-    backgrounds = sorted([art for art in artworks if art.get("type", 0) == ArtworkType.BACKGROUND], key=lambda image: image.get("score", 0),reverse=True)
+    def sorter(item):
+        item_language = item.get('language')
+        score = item.get('score', 0)
+        return item_language == language, score
+
+    artworks = movie.get("artworks", [{}])
+    artworks = filter(filter_by_language, artworks)
+    posters = []
+    backgrounds = []
+    for art in artworks:
+        art_type = art.get('type')
+        if art_type == ArtworkType.POSTER:
+            posters.append(art)
+        elif art_type == ArtworkType.BACKGROUND:
+            backgrounds.append(art)
+    posters.sort(key=sorter, reverse=True)
+    backgrounds.sort(key=sorter, reverse=True)
     artwork_dict = {
         "posters": posters[0:10],
         "fanarts": backgrounds[0:10],
@@ -155,7 +173,7 @@ def get_artworks_from_movie(movie: dict, language='eng'):
 
 def add_artworks(movie, liz, set_poster=None, language='eng'):
     
-    artworks = get_artworks_from_movie(movie)
+    artworks = get_artworks_from_movie(movie, language=language)
     posters = artworks.get("posters", [])
     fanarts = artworks.get("fanarts", [])
 
@@ -189,7 +207,8 @@ def get_artworks(id, settings, handle):
             handle, False, xbmcgui.ListItem(offscreen=True))
         return
     liz = xbmcgui.ListItem(id, offscreen=True)
-    add_artworks(movie, liz)
+    language = get_language(settings)
+    add_artworks(movie, liz, language=language)
     xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=liz)
 
 
