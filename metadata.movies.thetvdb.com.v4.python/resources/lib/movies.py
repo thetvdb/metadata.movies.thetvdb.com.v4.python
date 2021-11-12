@@ -51,7 +51,8 @@ def get_movie_details(id, settings, handle):
     # get the details of the found series
     tvdb_client = tvdb.Client(settings)
 
-    movie = tvdb_client.get_movie_details_api(id, settings)
+    language = settings.get('language') or 'eng'
+    movie = tvdb_client.get_movie_details_api(id, language=language)
     if not movie:
         xbmcplugin.setResolvedUrl(
             handle, False, xbmcgui.ListItem(offscreen=True))
@@ -102,7 +103,7 @@ def get_movie_details(id, settings, handle):
         details["setoverview"] = set_info["overview"]
         first_movie_in_set_id = set_info["movie_id"]
         if first_movie_in_set_id:
-            first_movie_in_set = tvdb_client.get_movie_details_api(first_movie_in_set_id, settings)
+            first_movie_in_set = tvdb_client.get_movie_details_api(first_movie_in_set_id, language=language)
             set_poster = first_movie_in_set["image"]
     liz.setInfo('video', details)
 
@@ -140,7 +141,7 @@ def get_cast(movie):
     }
 
 
-def get_artworks_from_movie(movie: dict):
+def get_artworks_from_movie(movie: dict, language='eng'):
     artworks = movie.get("artworks", [{}])
 
     posters = sorted([art for art in artworks if art.get("type", 0) == ArtworkType.POSTER], key=lambda image: image.get("score", 0),reverse=True)
@@ -152,7 +153,7 @@ def get_artworks_from_movie(movie: dict):
     return artwork_dict
 
 
-def add_artworks(movie, liz, set_poster=None):
+def add_artworks(movie, liz, set_poster=None, language='eng'):
     
     artworks = get_artworks_from_movie(movie)
     posters = artworks.get("posters", [])

@@ -1,6 +1,8 @@
 import urllib.parse
+from typing import Optional
 
 from . import simple_requests as requests
+from .simple_requests import HTTPError
 from .utils import logger
 
 apikey = "%apikey%"
@@ -156,7 +158,7 @@ class TVDB:
         url = self.url.list_url(id, True)
         return self.request.make_api_request(url)
 
-    def get_list_translation(self, id: int, lang: str) -> dict:
+    def get_list_translation(self, id: int, lang: str) -> Optional[dict]:
         """Returns a movie translation dictionary"""
         url = self.url.list_translation_url(id, lang)
         result = self.request.make_api_request(url)
@@ -169,13 +171,26 @@ class TVDB:
         url = self.url.search_url(query, kwargs)
         return self.request.make_api_request(url)
 
-    def get_movie_details_api(self, id, settings=None, language="eng") -> dict:
+    def get_movie_details_api(self, id, language="eng") -> dict:
         movie = self.get_movie_extended(id)
-        translations = self.get_movie_translation(id, language)
-        overview = translations.get("overview", "")
-        movie["overview"] = overview
-        name = translations.get("name", "")
-        movie["name"] = name
+        try:
+            english_translation = self.get_movie_translation(id, 'eng')
+        except HTTPError:
+            movie['overview'] = ''
+        else:
+            movie['overview'] = english_translation.get('overview') or ''
+        if language != 'eng':
+            try:
+                translation = self.get_movie_translation(id, language)
+            except HTTPError:
+                pass
+            else:
+                translated_name = translation.get("name")
+                if translated_name:
+                    movie["name"] = translated_name
+                translated_overview = translation.get("overview")
+                if translated_overview:
+                    movie["overview"] = translated_overview
         return movie
 
     def get_movie_set_info(self, id, settings):
