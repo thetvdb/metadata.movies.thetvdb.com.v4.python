@@ -3,6 +3,8 @@ import uuid
 import xbmc
 from xbmcaddon import Addon
 
+from .constants import LANGUAGES_MAP
+
 ADDON = Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
 
@@ -37,4 +39,5 @@ def get_language(path_settings):
     language = path_settings.get('language')
     if language is None:
         language = ADDON.getSetting('language') or 'eng'
-    return language
+    language_code = LANGUAGES_MAP.get(language, 'eng')
+    return language_code
