@@ -5,6 +5,7 @@ import xbmcgui
 import xbmcplugin
 
 from . import tvdb
+from .constants import COUNTRIES_MAP
 from .utils import logger, get_language
 
 
@@ -80,7 +81,7 @@ def get_movie_details(id, settings, handle):
     
     country = movie.get("originalCountry", None)
     if country:
-        details["country"] = country
+        details["country"] = COUNTRIES_MAP.get(country, '')
 
     studio = get_studio(movie)
     if studio:
