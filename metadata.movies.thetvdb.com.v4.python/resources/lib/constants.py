@@ -422,7 +422,7 @@ COUNTRIES_MAP = {
     'umi': 'United States Minor Outlying Islands',
     'unk': 'Kosovo',
     'ury': 'Uruguay',
-    'usa': 'United States of America',
+    'usa': 'USA',
     'uzb': 'Uzbekistan',
     'vat': 'Vatican City',
     'vct': 'Saint Vincent and the Grenadines',
