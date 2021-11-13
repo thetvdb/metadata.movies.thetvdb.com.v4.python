@@ -3,7 +3,7 @@ import uuid
 import xbmc
 from xbmcaddon import Addon
 
-from .constants import LANGUAGES_MAP
+from .constants import LANGUAGES_MAP, REVERSED_COUNTRIES_MAP
 
 ADDON = Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
@@ -41,3 +41,10 @@ def get_language(path_settings):
         language = ADDON.getSetting('language') or 'eng'
     language_code = LANGUAGES_MAP.get(language, 'eng')
     return language_code
+
+
+def get_rating_country_code(path_settings):
+    rating_country = path_settings.get('rating_country')
+    if rating_country is None:
+        rating_country = ADDON.getSetting('rating_country') or 'USA'
+    return REVERSED_COUNTRIES_MAP[rating_country]

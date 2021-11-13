@@ -199,6 +199,82 @@
 						<heading>30000</heading>
 					</control>
 				</setting>
+				<setting id="rating_country" type="string" label="30013" help="">
+					<level>0</level>
+					<default>USA</default>
+					<constraints>
+						<options>
+							<option>Argentina</option>
+							<option>Armenia</option>
+							<option>Australia</option>
+							<option>Brazil</option>
+							<option>Cambodia</option>
+							<option>Canada</option>
+							<option>Chile</option>
+							<option>Colombia</option>
+							<option>Croatia</option>
+							<option>Denmark</option>
+							<option>Ecuador</option>
+							<option>El Salvador</option>
+							<option>Finland</option>
+							<option>France</option>
+							<option>Germany</option>
+							<option>Greece</option>
+							<option>Hong Kong</option>
+							<option>Hungary</option>
+							<option>Iceland</option>
+							<option>India</option>
+							<option>Indonesia</option>
+							<option>Ireland</option>
+							<option>Israel</option>
+							<option>Italy</option>
+							<option>Lithuania</option>
+							<option>Malaysia</option>
+							<option>Mexico</option>
+							<option>Morocco</option>
+							<option>The Netherlands</option>
+							<option>New Zealand</option>
+							<option>Norway</option>
+							<option>Peru</option>
+							<option>Philippines</option>
+							<option>Poland</option>
+							<option>Portugal</option>
+							<option>Romania</option>
+							<option>Russia</option>
+							<option>Singapore</option>
+							<option>Slovakia</option>
+							<option>Slovenia</option>
+							<option>South Africa</option>
+							<option>South Korea</option>
+							<option>Spain</option>
+							<option>Taiwan</option>
+							<option>Thailand</option>
+							<option>Turkey</option>
+							<option>Ukraine</option>
+							<option>USA</option>
+							<option>Venezuela</option>
+							<option>Austria</option>
+							<option>Belgium</option>
+							<option>Bulgaria</option>
+							<option>Estonia</option>
+							<option>Jamaica</option>
+							<option>Japan</option>
+							<option>Kazakhstan</option>
+							<option>Latvia</option>
+							<option>Maldives</option>
+							<option>Malta</option>
+							<option>Nigeria</option>
+							<option>Saudi Arabia</option>
+							<option>Sweden</option>
+							<option>United Arab Emirates</option>
+							<option>Great Britain</option>
+							<option>Vietnam</option>
+						</options>
+					</constraints>
+					<control type="list" format="string">
+						<heading>30013</heading>
+					</control>
+				</setting>
 				<setting id="get_tags" type="boolean" label="30012" help="">
 					<level>0</level>
 					<default>true</default>

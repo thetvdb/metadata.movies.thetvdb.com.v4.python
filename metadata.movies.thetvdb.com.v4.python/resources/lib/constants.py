@@ -438,3 +438,5 @@ COUNTRIES_MAP = {
     'zmb': 'Zambia',
     'zwe': 'Zimbabwe',
 }
+
+REVERSED_COUNTRIES_MAP = {country: code for code, country in COUNTRIES_MAP.items()}

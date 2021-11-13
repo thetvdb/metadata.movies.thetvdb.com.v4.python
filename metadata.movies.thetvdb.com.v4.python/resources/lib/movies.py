@@ -6,7 +6,7 @@ import xbmcplugin
 
 from . import tvdb
 from .constants import COUNTRIES_MAP
-from .utils import logger, get_language
+from .utils import logger, get_language, get_rating_country_code
 
 
 ARTWORK_URL_PREFIX = "https://artworks.thetvdb.com"
@@ -75,7 +75,8 @@ def get_movie_details(id, settings, handle):
     if years:
         details["year"] = years["year"]
         details["premiered"] = years["premiered"]
-    rating = get_rating(movie)
+    rating_country_code = get_rating_country_code(settings)
+    rating = get_rating(movie, rating_country_code)
     if rating:
         details["mpaa"] = rating
     
@@ -241,16 +242,29 @@ def get_genres(movie):
     return [genre["name"] for genre in movie.get("genres", [])]
 
 
-def get_rating(movie):
-    ratings = movie.get("contentRatings", None)
+def get_rating(movie, rating_country_code):
+    ratings = movie.get("contentRatings")
     rating = ""
-    if ratings is not None:
-        for r in ratings:
-            if r["country"] == "usa":
-                rating = r["name"]
-        if rating == "" and len(ratings) != 0:
+    if ratings:
+        if len(ratings) == 1:
             rating = ratings[0]["name"]
-    
+            country_code = ratings[0]['country']
+            country = COUNTRIES_MAP.get(country_code)
+            if country is not None:
+                rating = f'{country}: {rating}'
+        if not rating:
+            usa_rating = ''
+            local_rating = ''
+            for rating in ratings:
+                if rating['country'] == 'usa':
+                    usa_rating = f"USA: {rating['name']}"
+                elif rating_country_code != 'usa' and rating['country'] == rating_country_code:
+                    local_rating = rating['name']
+                    country_code = rating['country']
+                    country = COUNTRIES_MAP.get(country_code)
+                    if country is not None:
+                        local_rating = f'{country}: {local_rating}'
+            rating = local_rating if local_rating else usa_rating
     return rating
 
 
