@@ -38,7 +38,7 @@ def create_uuid():
 def get_language(path_settings):
     language = path_settings.get('language')
     if language is None:
-        language = ADDON.getSetting('language') or 'eng'
+        language = ADDON.getSetting('language') or 'English'
     language_code = LANGUAGES_MAP.get(language, 'eng')
     return language_code
 
