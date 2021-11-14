@@ -16,10 +16,16 @@ SUPPORTED_REMOTE_IDS = {
     'TheMovieDB.com': 'tmdb',
 }
 
+MAX_IMAGES_NUMBER = 10
+
 
 class ArtworkType(enum.IntEnum):
     POSTER = 14
     BACKGROUND = 15
+    BANNER = 16
+    ICON = 18
+    CLEARART = 24
+    CLEARLOGO = 25
 
 
 def search_movie(title, settings, handle, year=None) -> None:
@@ -151,24 +157,44 @@ def get_artworks_from_movie(movie: dict, language='eng') -> dict:
 
     def sorter(item):
         item_language = item.get('language')
-        score = item.get('score', 0)
+        score = item.get('score') or 0
         return item_language == language, score
 
     artworks = movie.get("artworks", [{}])
     artworks = filter(filter_by_language, artworks)
     posters = []
     backgrounds = []
+    banners = []
+    icons = []
+    cleararts = []
+    clearlogos = []
     for art in artworks:
         art_type = art.get('type')
         if art_type == ArtworkType.POSTER:
             posters.append(art)
         elif art_type == ArtworkType.BACKGROUND:
             backgrounds.append(art)
+        elif art_type == ArtworkType.BANNER:
+            banners.append(art)
+        elif art_type == ArtworkType.ICON:
+            icons.append(art)
+        elif art_type == ArtworkType.CLEARART:
+            cleararts.append(art)
+        elif art_type == ArtworkType.CLEARLOGO:
+            clearlogos.append(art)
     posters.sort(key=sorter, reverse=True)
     backgrounds.sort(key=sorter, reverse=True)
+    banners.sort(key=sorter, reverse=True)
+    icons.sort(key=sorter, reverse=True)
+    cleararts.sort(key=sorter, reverse=True)
+    clearlogos.sort(key=sorter, reverse=True)
     artwork_dict = {
-        "posters": posters[0:10],
-        "fanarts": backgrounds[0:10],
+        'poster': posters[:MAX_IMAGES_NUMBER],
+        'fanart': backgrounds[:MAX_IMAGES_NUMBER],
+        'banner': banners[:MAX_IMAGES_NUMBER],
+        'icon': banners[:MAX_IMAGES_NUMBER],
+        'clearart': cleararts[:MAX_IMAGES_NUMBER],
+        'clearlogo': clearlogos[:MAX_IMAGES_NUMBER]
     }
     return artwork_dict
 
@@ -176,17 +202,17 @@ def get_artworks_from_movie(movie: dict, language='eng') -> dict:
 def add_artworks(movie, liz, set_poster=None, language='eng'):
     
     artworks = get_artworks_from_movie(movie, language=language)
-    posters = artworks.get("posters", [])
-    fanarts = artworks.get("fanarts", [])
+    fanarts = artworks.pop('fanart')
 
     if set_poster:
         liz.addAvailableArtwork(set_poster, 'set.poster')
 
-    for poster in posters:
-        image = poster.get("image", "")
-        if ARTWORK_URL_PREFIX not in image:
-            image = ARTWORK_URL_PREFIX + image
-        liz.addAvailableArtwork(image, 'poster')
+    for image_type, images in artworks.items():
+        for image in images:
+            image_url = image.get('image') or ''
+            if ARTWORK_URL_PREFIX not in image_url:
+                image_url = ARTWORK_URL_PREFIX + image_url
+            liz.addAvailableArtwork(image_url, image_type)
 
     fanart_items = []
     for fanart in fanarts:
