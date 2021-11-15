@@ -18,6 +18,12 @@ SUPPORTED_REMOTE_IDS = {
 
 MAX_IMAGES_NUMBER = 10
 
+# Some skins use those names to display rating icons
+RATING_COUNTRY_MAP = {
+    'gbr': 'UK',
+    'nld': 'NL',
+}
+
 
 class ArtworkType(enum.IntEnum):
     POSTER = 14
@@ -283,13 +289,16 @@ def get_rating(movie, rating_country_code):
             local_rating = ''
             for rating in ratings:
                 if rating['country'] == 'usa':
-                    usa_rating = f"USA: {rating['name']}"
+                    usa_rating = f"Rated {rating['name']}"
                 elif rating_country_code != 'usa' and rating['country'] == rating_country_code:
                     local_rating = rating['name']
                     country_code = rating['country']
-                    country = COUNTRIES_MAP.get(country_code)
+                    if country_code in RATING_COUNTRY_MAP:
+                        country = RATING_COUNTRY_MAP[country_code]
+                    else:
+                        country = COUNTRIES_MAP.get(country_code)
                     if country is not None:
-                        local_rating = f'{country}: {local_rating}'
+                        local_rating = f'{country}:{local_rating}'
             rating = local_rating if local_rating else usa_rating
     return rating
 
