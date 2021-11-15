@@ -281,9 +281,14 @@ def get_rating(movie, rating_country_code):
         if len(ratings) == 1:
             rating = ratings[0]["name"]
             country_code = ratings[0]['country']
-            country = COUNTRIES_MAP.get(country_code)
-            if country is not None:
-                rating = f'{country}: {rating}'
+            if country_code in RATING_COUNTRY_MAP:
+                country = RATING_COUNTRY_MAP[country_code]
+            else:
+                country = COUNTRIES_MAP.get(country_code)
+            if country is not None and country_code != 'usa':
+                rating = f'{country}:{rating}'
+            else:
+                rating = f'Rated {rating}'
         if not rating:
             usa_rating = ''
             local_rating = ''
@@ -381,4 +386,3 @@ def get_unique_ids(movie):
             if source_name in SUPPORTED_REMOTE_IDS:
                 unique_ids[SUPPORTED_REMOTE_IDS[source_name]] = remote_id_info['id']
     return unique_ids
-
