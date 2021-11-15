@@ -252,11 +252,11 @@ def get_premiere_date(movie):
         return None
     if len(releases) > 1:
         releases.sort(key=lambda r: r['date'])
-    release_str = releases[0]['date']
-    year = int(release_str.split("-")[0])
+    date_str = releases[0]['date']
+    year = int(date_str.split("-")[0])
     return {
         "year": year,
-        "date": release_str,
+        "date": date_str,
     }
 
 
