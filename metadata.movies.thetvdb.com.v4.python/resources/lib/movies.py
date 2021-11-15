@@ -83,10 +83,10 @@ def get_movie_details(id, settings, handle):
         'director': people["directors"],
         'genre': genres,
     }
-    years = get_year(movie)
-    if years:
-        details["year"] = years["year"]
-        details["premiered"] = years["premiered"]
+    premiere_date = get_premiere_date(movie)
+    if premiere_date is not None:
+        details["year"] = premiere_date["year"]
+        details["premiered"] = premiere_date["date"]
     rating_country_code = get_rating_country_code(settings)
     rating = get_rating(movie, rating_country_code)
     if rating:
@@ -246,27 +246,17 @@ def get_artworks(id, settings, handle):
     xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=liz)
 
 
-def get_year(movie):
-    country = movie.get("originalCountry", "")
-    releases = movie.get("releases", [])
-    global_release_str = ""
-    release_str = ""
-    if len(releases) < 1:
+def get_premiere_date(movie):
+    releases = movie.get("releases")
+    if not releases:
         return None
-    for release in releases:
-        release_country =release["country"]
-        if  release_country == country:
-            release_str = release["date"]
-        if release_country == "global":
-            global_release_str = release["date"]
-    if not release_str and not global_release_str:
-        return None
-    if not release_str and global_release_str:
-        release_str = global_release_str
+    if len(releases) > 1:
+        releases.sort(key=lambda r: r['date'])
+    release_str = releases[0]['date']
     year = int(release_str.split("-")[0])
     return {
         "year": year,
-        "premiered": release_str,
+        "date": release_str,
     }
 
 
