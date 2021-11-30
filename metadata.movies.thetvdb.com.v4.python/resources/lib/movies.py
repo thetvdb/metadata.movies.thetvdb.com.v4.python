@@ -133,7 +133,8 @@ def get_cast(movie):
     cast = []
     directors = []
     writers = []
-    for char in movie["characters"]:
+    characters = movie.get('characters') or ()
+    for char in characters:
         if char["peopleType"] == "Actor":
             d = {
                 'name': char["personName"],
@@ -166,7 +167,7 @@ def get_artworks_from_movie(movie: dict, language='eng') -> dict:
         score = item.get('score') or 0
         return item_language == language, score
 
-    artworks = movie.get("artworks", [{}])
+    artworks = movie.get("artworks") or ()
     artworks = filter(filter_by_language, artworks)
     posters = []
     backgrounds = []
@@ -261,7 +262,8 @@ def get_premiere_date(movie):
 
 
 def get_genres(movie):
-    return [genre["name"] for genre in movie.get("genres", [])]
+    genres = movie.get('genres') or ()
+    return [genre["name"] for genre in genres]
 
 
 def get_rating(movie, rating_country_code):
