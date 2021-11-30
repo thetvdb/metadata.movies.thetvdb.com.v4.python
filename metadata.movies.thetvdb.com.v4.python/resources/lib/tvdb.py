@@ -1,4 +1,5 @@
 import urllib.parse
+from pprint import pformat
 from typing import Optional
 
 from . import simple_requests as requests
@@ -41,7 +42,7 @@ class Request:
         self.cache = {}
 
     def make_api_request(self, url):
-        logger.debug(f"about to make request to url {url}")
+        logger.debug(f"about to make request to API url {url}")
         logger.debug(url)
         data = self.cache.get(url, None)
         if data:
@@ -55,12 +56,13 @@ class Request:
         if not response.ok:
             response.raise_for_status()
         data = response.json()['data']
+        logger.debug(f'API response:\n{pformat(data)}')
         self.cache[url] = data
         return data
 
     @staticmethod
     def make_web_request(url):
-        logger.debug(f"about to make request to url {url}")
+        logger.debug(f"about to make request to web url {url}")
         headers = {
             'User-Agent': USER_AGENT,
             'Accept': 'text/html',
