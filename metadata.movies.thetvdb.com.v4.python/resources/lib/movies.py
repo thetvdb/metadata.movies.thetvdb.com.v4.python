@@ -44,9 +44,17 @@ def search_movie(title, settings, handle, year=None) -> None:
     search_results = tvdb_client.search(title, type="movie", **kwargs)
     if not search_results:
         return
+    language = get_language(settings)
     items = []
     for movie in search_results:
-        name = movie['name']
+        name = None
+        translations = movie.get('translations') or {}
+        if translations:
+            name = translations.get(language)
+            if name is None:
+                translations.get('eng')
+        if name is None:
+            name = movie['name']
         if movie.get('year'):
             name += f' ({movie["year"]})'
         liz = xbmcgui.ListItem(name, offscreen=True)
