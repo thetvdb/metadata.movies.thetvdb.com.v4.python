@@ -51,9 +51,9 @@ def search_movie(title, settings, handle, year=None) -> None:
         translations = movie.get('translations') or {}
         if translations:
             name = translations.get(language)
-            if name is None:
+            if not name:
                 translations.get('eng')
-        if name is None:
+        if not name:
             name = movie['name']
         if movie.get('year'):
             name += f' ({movie["year"]})'
