@@ -166,17 +166,19 @@ def get_cast(movie):
 
 
 def get_artworks_from_movie(movie: dict, language='eng') -> dict:
-    def filter_by_language(item):
-        item_language = item.get('language')
-        return item_language in (language, 'eng') or item_language is None
 
     def sorter(item):
         item_language = item.get('language')
         score = item.get('score') or 0
-        return item_language == language, score
+        if item_language == language:
+            return 3, score
+        if item_language is None:
+            return 2, score
+        if item_language == 'eng':
+            return 1, score
+        return 0, score
 
     artworks = movie.get("artworks") or ()
-    artworks = filter(filter_by_language, artworks)
     posters = []
     backgrounds = []
     banners = []
