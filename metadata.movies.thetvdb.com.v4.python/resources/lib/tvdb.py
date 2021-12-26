@@ -174,7 +174,11 @@ class TVDB:
         return self.request.make_api_request(url)
 
     def get_movie_details_api(self, id, language="eng") -> dict:
-        movie = self.get_movie_extended(id)
+        try:
+            movie = self.get_movie_extended(id)
+        except HTTPError as exc:
+            logger.error(str(exc))
+            return {}
         try:
             english_translation = self.get_movie_translation(id, 'eng')
         except HTTPError:
@@ -184,7 +188,8 @@ class TVDB:
         if language != 'eng':
             try:
                 translation = self.get_movie_translation(id, language)
-            except HTTPError:
+            except HTTPError as exc:
+                logger.debug(str(exc))
                 pass
             else:
                 translated_name = translation.get("name")
