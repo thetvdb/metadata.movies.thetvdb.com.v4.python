@@ -148,9 +148,9 @@ def get_cast(movie):
                 'name': char["personName"],
                 'role': char["name"],
             }
-            if char.get('image'):
-                thumbnail = char['image']
-                if ARTWORK_URL_PREFIX not in thumbnail:
+            thumbnail = char.get('image') or char.get('personImgURL')
+            if thumbnail:
+                if not thumbnail.startswith(ARTWORK_URL_PREFIX):
                     thumbnail = ARTWORK_URL_PREFIX + thumbnail
                 d['thumbnail'] = thumbnail
             cast.append(d)
