@@ -32,14 +32,16 @@ def get_movie_id_from_nfo(nfo, plugin_handle):
         movie_url = movie_url_match.group(0)
         tvdb_id = _get_tvdb_id_from_slug(movie_url)
         logger.debug(f'Movie matched by TheTVDB URL in NFO: {tvdb_id}')
-    tvdb_id_xml_match = TVDB_ID_XML_REGEX.search(nfo)
-    if tvdb_id_xml_match is not None:
-        tvdb_id = tvdb_id_xml_match.group(1)
-        logger.debug(f'Movie matched by uniqueid XML tag in NFO: {tvdb_id}')
+    if tvdb_id is None:
+        tvdb_id_xml_match = TVDB_ID_XML_REGEX.search(nfo)
+        if tvdb_id_xml_match is not None:
+            tvdb_id = tvdb_id_xml_match.group(1)
+            logger.debug(f'Movie matched by uniqueid XML tag in NFO: {tvdb_id}')
     if tvdb_id is None:
         logger.debug('Unable to match the movie by NFO')
         return
     list_item = xbmcgui.ListItem(offscreen=True)
+    list_item.setUniqueIDs({'tvdb': tvdb_id}, 'tvdb')
     xbmcplugin.addDirectoryItem(
         handle=plugin_handle,
         url=tvdb_id,
