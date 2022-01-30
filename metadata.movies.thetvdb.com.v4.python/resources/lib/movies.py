@@ -82,6 +82,7 @@ def get_movie_details(id, settings, handle):
     people = get_cast(movie)
     liz.setCast(people["cast"])
     genres = get_genres(movie)
+    duration_minutes = movie.get('runtime') or 0
     details = {
         'title': movie["name"],
         'plot': movie["overview"],
@@ -90,6 +91,7 @@ def get_movie_details(id, settings, handle):
         'writer': people["writers"],
         'director': people["directors"],
         'genre': genres,
+        'duration': duration_minutes * 60,
     }
     premiere_date = get_premiere_date(movie)
     if premiere_date is not None:
