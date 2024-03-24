@@ -173,21 +173,37 @@ class TVDB:
         url = self.url.search_url(query, kwargs)
         return self.request.make_api_request(url)
 
+    # This method does two things - it tries to get the overview and title in the
+    # requested language, then it falls back to english if the overview or title or missing
+    # (If english is not the initially requested language)
+    # If the overview or title is also not in english, we will keep the overview or title
+    # to the original language of the entry (the overview can also be empty if
+    # it doesn't exist in the original language
     def get_movie_details_api(self, id, language="eng") -> dict:
+        translated_name = ''
+        translated_overview = ''
         try:
             movie = self.get_movie_extended(id)
         except HTTPError as exc:
             logger.error(str(exc))
             return {}
+        # Try to get both overview and title in the requested language
         try:
-            english_translation = self.get_movie_translation(id, 'eng')
-        except HTTPError:
-            movie['overview'] = ''
+            translation = self.get_movie_translation(id, language)
+        except HTTPError as exc:
+            logger.debug(str(exc))
+            pass
         else:
-            movie['overview'] = english_translation.get('overview') or ''
-        if language != 'eng':
+            translated_name = translation.get("name")
+            if translated_name:
+                movie["name"] = translated_name
+            translated_overview = translation.get("overview")
+            if translated_overview:
+                movie["overview"] = translated_overview
+        # If we are missing a translation, fall back to english
+        if (not translated_name or not translated_overview) and language != "eng":
             try:
-                translation = self.get_movie_translation(id, language)
+                translation = self.get_movie_translation(id, "eng")
             except HTTPError as exc:
                 logger.debug(str(exc))
                 pass
@@ -198,6 +214,9 @@ class TVDB:
                 translated_overview = translation.get("overview")
                 if translated_overview:
                     movie["overview"] = translated_overview
+        # If we still have no overview, fill the map entry with empty string
+        if movie.get("overview") is None:
+            movie["overview"] = ''
         return movie
 
     def get_movie_set_info(self, id, settings):
